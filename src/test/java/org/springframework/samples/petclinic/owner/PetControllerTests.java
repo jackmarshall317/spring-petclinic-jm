@@ -206,6 +206,43 @@ class PetControllerTests {
 				.andExpect(view().name("pets/createOrUpdatePetForm"));
 		}
 
+		@Test
+		void testProcessUpdateFormWithDuplicateName() throws Exception {
+			// Return fresh owner instances so form binding on the pet doesn't
+			// modify the same object the duplicate-check iterates over.
+			given(owners.findById(TEST_OWNER_ID)).willAnswer(invocation -> {
+				Owner o = new Owner();
+				Pet p = new Pet();
+				Pet d = new Pet();
+				o.addPet(p);
+				o.addPet(d);
+				p.setId(TEST_PET_ID);
+				d.setId(TEST_PET_ID + 1);
+				p.setName("petty");
+				d.setName("doggy");
+				return Optional.of(o);
+			});
+			mockMvc
+				.perform(post("/owners/{ownerId}/pets/{petId}/edit", TEST_OWNER_ID, TEST_PET_ID).param("name", "doggy")
+					.param("birthDate", "2015-02-12"))
+				.andExpect(model().attributeHasErrors("pet"))
+				.andExpect(model().attributeHasFieldErrors("pet", "name"))
+				.andExpect(model().attributeHasFieldErrorCode("pet", "name", "duplicate"))
+				.andExpect(view().name("pets/createOrUpdatePetForm"));
+		}
+
+		@Test
+		void testProcessUpdateFormWithFutureBirthDate() throws Exception {
+			LocalDate futureDate = LocalDate.now().plusMonths(1);
+			mockMvc
+				.perform(post("/owners/{ownerId}/pets/{petId}/edit", TEST_OWNER_ID, TEST_PET_ID).param("name", "Betty")
+					.param("birthDate", futureDate.toString()))
+				.andExpect(model().attributeHasErrors("pet"))
+				.andExpect(model().attributeHasFieldErrors("pet", "birthDate"))
+				.andExpect(model().attributeHasFieldErrorCode("pet", "birthDate", "typeMismatch.birthDate"))
+				.andExpect(view().name("pets/createOrUpdatePetForm"));
+		}
+
 	}
 
 }

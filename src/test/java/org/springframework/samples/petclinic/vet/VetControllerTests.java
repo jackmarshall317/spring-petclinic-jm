@@ -97,4 +97,34 @@ class VetControllerTests {
 			.andExpect(jsonPath("$.vetList[0].id").value(1));
 	}
 
+	@Test
+	void testShowResourcesVetListContainsAllVets() throws Exception {
+		mockMvc.perform(get("/vets").accept(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.vetList").isArray())
+			.andExpect(jsonPath("$.vetList.length()").value(2))
+			.andExpect(jsonPath("$.vetList[0].firstName").value("James"))
+			.andExpect(jsonPath("$.vetList[0].lastName").value("Carter"))
+			.andExpect(jsonPath("$.vetList[1].firstName").value("Helen"))
+			.andExpect(jsonPath("$.vetList[1].lastName").value("Leary"));
+	}
+
+	@Test
+	void testShowResourcesVetListSpecialties() throws Exception {
+		mockMvc.perform(get("/vets").accept(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.vetList[0].specialties").isEmpty())
+			.andExpect(jsonPath("$.vetList[1].specialties.length()").value(1))
+			.andExpect(jsonPath("$.vetList[1].specialties[0].name").value("radiology"));
+	}
+
+	@Test
+	void testShowVetListHtmlPaginationModel() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.get("/vets.html?page=1"))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeExists("currentPage"))
+			.andExpect(model().attributeExists("totalPages"))
+			.andExpect(model().attributeExists("totalItems"));
+	}
+
 }
