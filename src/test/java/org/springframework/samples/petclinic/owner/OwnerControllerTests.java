@@ -48,6 +48,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 
 /**
  * Test class for {@link OwnerController}
@@ -246,6 +247,51 @@ class OwnerControllerTests {
 			.andExpect(status().is3xxRedirection())
 			.andExpect(redirectedUrl("/owners/" + pathOwnerId + "/edit"))
 			.andExpect(flash().attributeExists("error"));
+	}
+
+	@Test
+	void testShowOwnerNotFound() throws Exception {
+		when(owners.findById(99)).thenReturn(Optional.empty());
+		org.junit.jupiter.api.Assertions.assertThrows(Exception.class,
+				() -> mockMvc.perform(get("/owners/{ownerId}", 99)));
+	}
+
+	@Test
+	void testProcessCreationFormSuccessRedirectsToOwner() throws Exception {
+		mockMvc
+			.perform(post("/owners/new").param("firstName", "Joe")
+				.param("lastName", "Bloggs")
+				.param("address", "123 Caramel Street")
+				.param("city", "London")
+				.param("telephone", "1316761638"))
+			.andExpect(status().is3xxRedirection())
+			.andExpect(flash().attributeExists("message"));
+	}
+
+	@Test
+	void testProcessFindFormWithNullLastName() throws Exception {
+		Page<Owner> tasks = new PageImpl<>(List.of(george(), new Owner()));
+		when(this.owners.findByLastNameStartingWith(eq(""), any(Pageable.class))).thenReturn(tasks);
+		mockMvc.perform(get("/owners?page=1"))
+			.andExpect(status().isOk())
+			.andExpect(model().attributeExists("currentPage"))
+			.andExpect(model().attributeExists("totalPages"))
+			.andExpect(model().attributeExists("totalItems"))
+			.andExpect(model().attributeExists("listOwners"))
+			.andExpect(view().name("owners/ownersList"));
+	}
+
+	@Test
+	void testProcessUpdateOwnerFormSuccessFlashMessage() throws Exception {
+		mockMvc
+			.perform(post("/owners/{ownerId}/edit", TEST_OWNER_ID).param("firstName", "Joe")
+				.param("lastName", "Bloggs")
+				.param("address", "123 Caramel Street")
+				.param("city", "London")
+				.param("telephone", "1616291589"))
+			.andExpect(status().is3xxRedirection())
+			.andExpect(flash().attributeExists("message"))
+			.andExpect(view().name("redirect:/owners/{ownerId}"));
 	}
 
 }
