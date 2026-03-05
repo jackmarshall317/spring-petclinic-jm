@@ -67,14 +67,16 @@ class WelcomeControllerIntegrationTests {
 	void testWelcomePageGermanLocale() throws Exception {
 		mockMvc.perform(get("/?lang=de"))
 			.andExpect(status().isOk())
-			.andExpect(content().string(org.hamcrest.Matchers.containsString("Willkommen")));
+			.andExpect(content().string(org.hamcrest.Matchers.containsString("Willkommen")))
+			.andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString(">Welcome<"))));
 	}
 
 	@Test
 	void testWelcomePageSpanishLocale() throws Exception {
 		mockMvc.perform(get("/?lang=es"))
 			.andExpect(status().isOk())
-			.andExpect(content().string(org.hamcrest.Matchers.containsString("Bienvenido")));
+			.andExpect(content().string(org.hamcrest.Matchers.containsString("Bienvenido")))
+			.andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString(">Welcome<"))));
 	}
 
 	@Test
